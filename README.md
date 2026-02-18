@@ -92,6 +92,11 @@ todo/
   ```
   127.0.0.1 todo.local
   ```
+<img width="4077" height="2656" alt="Scheme" src="https://github.com/user-attachments/assets/03e4f583-202b-4fad-806f-62c675ff36ad" />
+
+
+
+
 
 В планах
 

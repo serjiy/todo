@@ -1,74 +1,105 @@
-# To-Do-List
+# ToDo List — приложение на Flask + MongoDB
 
-To-Do-List is mini-project made with Flask and MongoDB. Dockerfile is also available to make docker image and docker containers.
+Простое приложение для управления задачами.   
+Данные хранятся в MongoDB.  
+Приложение отдаёт метрики в формате Prometheus по адресу `/metrics`.
 
-## Built using :
-```sh
-	Flask : Python Based mini-Webframework
-	MongoDB : Database Server
-	Pymongo : Database Connector ( For creating connectiong between MongoDB and Flask )
-	HTML5 (jinja2) : For Form and Table
+На текущий момент проект умеет:
+
+- Полностью работать через Docker Compose (локальный запуск одной командой)
+- Разворачиваться в Minikube (Kubernetes) с двумя репликами приложения
+- Доступен по адресу http://todo.local (через Ingress)
+- Иметь встроенные метрики (количество задач, HTTP-запросы, память, CPU, GC и т.д.)
+- Запускаться стабильно после перезапуска Docker и Minikube
+
+## Как запустить локально (Docker Compose)
+
+Самый простой способ:
+
+```bash
+docker compose up -d
 ```
 
-## Set up environment for using this repo:
-```
-Install Python ( If you don't have already )
-	$ sudo apt-get install python
+После запуска открывайте:
 
-Install MongoDB ( Make sure you install it properly )
-	$ sudo apt install -y mongodb
+- http://localhost:5000/list  
+- http://localhost:5000/metrics (метрики)
 
+Это запускает два контейнера:  
+- `flask-app` — само приложение  
+- `mongo` — база данных
 
-Install Dependencies of the application (Flask, Bson and PyMongo)
-	$ pip install -r requirements.txt
-```
+Остановить:
 
-## Run the application
-```
-Run MongoDB
-1) Start MongoDB
-	$ sudo service mongod start
-2) Stop MongoDB
-	$ sudo service mongod stop
-
-Run the Flask file(app.py)
-	$ FLASK_ENV=development python app.py
-
-Go to http://localhost:5000 with any of browsers and DONE !!
-	$ open http://localhost:5000
-
-To exit press Ctrl+C
+```bash
+docker compose down
 ```
 
-## Using [Docker](https://www.docker.com) [Docker-Compose](https://docs.docker.com/compose)
+## Как запустить в Kubernetes (Minikube)
 
-Make sure that you are inside the project directory, where `docker-compose.yaml` file is present. Now, building and running the application server container and mongodb container using `docker-compose` :
+1. Запустите Minikube:
+
+   ```bash
+   minikube start --driver=docker
+   ```
+
+2. Запустите tunnel:
+
+   ```bash
+   minikube tunnel
+   ```
+
+   Оставьте окно открытым.
+
+3. Разверните приложение:
+
+   ```bash
+   kubectl apply -f k8s/
+   ```
+
+4. Подождите 30–60 секунд.
+
+5. Откройте в браузере:
+
+   http://todo.local/list  
+   http://todo.local/metrics
+
+## Структура проекта
+
 ```
-Building or fetching the necessary images and later, creating and starting containers for the application
-    $ docker-compose up -d
-
-Go to http://localhost:5000 with any of browsers and DONE !!
-    $ open http://localhost:5000
+todo/
+├── app.py                  # основная логика: Flask, маршруты, задачи, метрики
+├── requirements.txt        # зависимости Python
+├── Dockerfile              # сборка Docker-образа приложения
+├── docker-compose.yml      # запуск Flask + MongoDB локально
+├── k8s/                    # файлы для Kubernetes
+│   ├── deployment.yaml     # запуск приложения (2 реплики)
+│   ├── mongo-deployment.yaml # запуск MongoDB
+│   ├── services.yaml       # доступ к приложению и базе
+│   ├── ingress.yaml        # домен todo.local
+│   └── service-monitor.yaml # настройка сбора метрик (в процессе)
+└── templates/              # HTML-шаблоны страниц
+└── static/                 # CSS, JS, картинки
 ```
 
-### Running, Debugging and Stopping the application under the hood
-```
-For almost all of the `docker-compose` commands, make sure that you are inside the project directory, where `docker-compose.yaml` file is present.
+## Требования к окружению
 
-Passing `-d` flag along with docker-compose, runs the application as daemon
-    $ docker-compose up -d
+- Docker Desktop (запущенный)
+- Minikube (для Kubernetes-варианта)
+- kubectl (идёт вместе с Minikube)
+- Браузер
+- Запись в файле hosts:  
+  ```
+  127.0.0.1 todo.local
+  ```
 
-Seeing all of the logs from the application deployed.
-    $ docker-compose logs
+В планах
 
-Stopping the application
-    $ docker-compose down
-```
+- Автоматическое масштабирование подов (HPA)
+- Постоянное хранилище для MongoDB (PersistentVolume)
+- Автоматическая сборка и деплой через GitHub Actions (CI/CD)
+- Удобная визуализация метрик (графики задач, запросов, ресурсов)
+- Сбор логов приложения
 
-## Screenshot :
-
-![Screenshot of the Output](https://github.com/CoolBoi567/ToDo-List-using-Flask-and-MongoDB/blob/master/static/images/screenshot.jpg?raw=true "Screenshot of Output")
-
-Thanks to Twitter for emoji support with [Twemoji](https://github.com/twitter/twemoji).
-
-Made with ❤️ from Nepal 🇳🇵
+Проект уже стабильно запускается локально и в Minikube.  
+Можно добавлять задачи, смотреть метрики, перезапускать — всё работает.

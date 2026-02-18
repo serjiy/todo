@@ -21,7 +21,7 @@ heading = "ToDo Reminder"
 # Prometheus HTTP-метрики (автоматические)
 metrics = PrometheusMetrics(app, group_by='url_rule')
 
-# Кастомные метрики через prometheus_client (без конфликта)
+# Кастомные метрики через prometheus_client
 tasks_created = Counter(
     'todo_tasks_created_total',
     'Total number of tasks created',

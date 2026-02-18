@@ -11,8 +11,8 @@ services:
       - MONGO_PORT=27017
     depends_on:
       mongo:
-        condition: service_started   # ← ждём, пока mongo запустится (хорошая практика)
-    restart: unless-stopped          # ← полезно для разработки: перезапускается при сбое
+        condition: service_started   # ← ждём, пока mongo запустится 
+    restart: unless-stopped          # ← для разработки: перезапускается при сбое
 
   mongo:
     image: mvertes/alpine-mongo:latest

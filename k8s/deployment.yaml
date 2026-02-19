@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
       - name: todo
-        image: todo-todo-flaskapp:latest
+        image: serjiy/todo:20260219-101831-fe63054
         imagePullPolicy: Never
         ports:
         - containerPort: 5000

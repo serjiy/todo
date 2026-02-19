@@ -121,7 +121,7 @@ kubectl get pods -w
 # 8. Проверь Ingress
 kubectl get ingress
 
-# 9. Открой Grafana (логин/пароль: admin/admin)
+# 9. Открой Grafana
 minikube service grafana
 
 # 10. Открой Prometheus (для проверки)

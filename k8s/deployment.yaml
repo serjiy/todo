@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
       - name: todo
-        image: serjiy/todo:20260219-125744-2a9b6f9
+        image: serjiy/todo:20260219-125943-439ebb3
         imagePullPolicy: Never
         ports:
         - containerPort: 5000

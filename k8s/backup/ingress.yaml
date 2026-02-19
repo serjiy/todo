@@ -11,6 +11,6 @@ spec:
         pathType: Prefix
         backend:
           service:
-            name: todo  # Должно совпадать с именем todo-сервиса
+            name: todo-service
             port:
-              number: 5000
+              number: 80

@@ -13,10 +13,6 @@ spec:
     metadata:
       labels:
         app: todo
-      annotations:
-        prometheus.io/scrape: "true"
-        prometheus.io/port: "5000"
-        prometheus.io/path: "/metrics"
     spec:
       containers:
       - name: todo
@@ -26,7 +22,7 @@ spec:
         - containerPort: 5000
         env:
         - name: MONGO_HOST
-          value: "mongo"
+          value: "mongo-service"
         - name: MONGO_PORT
           value: "27017"
         readinessProbe:

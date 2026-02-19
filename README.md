@@ -110,6 +110,8 @@ kubectl apply -f ingress.yaml
 kubectl apply -f hpa.yaml
 kubectl apply -f monitoring/
 
+где * путь до папки todo\k8s
+
 # 6. Запусти туннель (ВАЖНО: окно должно оставаться открытым)
 minikube tunnel
 

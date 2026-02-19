@@ -59,7 +59,7 @@ todo/									# Корень проекта
 │   ├── ingress.yaml                    # Вход в кластер: правило, что http://todo.local направляется в сервис Flask
 │   ├── hpa.yaml                        # HorizontalPodAutoscaler — правило автомасштабирования: если CPU > 50%, добавить поды (до 5)
 │   │
-│   └── monitoring/                       # Всё для наблюдения за приложением
+│   └── monitoring/                        # Всё для наблюдения за приложением
 │       ├── prometheus-config.yaml         # Конфиг Prometheus: откуда забирать метрики (наши поды с аннотациями)
 │       ├── prometheus-deployment.yaml     # Сам Prometheus — хранилище метрик
 │       ├── prometheus-rbac.yaml           # Права для Prometheus: чтобы мог читать информацию о подах из Kubernetes API

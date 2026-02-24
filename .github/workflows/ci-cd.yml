@@ -53,3 +53,18 @@ jobs:
         git add k8s/deployment.yaml
         git diff --quiet && git diff --staged --quiet || git commit -m "chore: update image tag to ${{ steps.meta.outputs.timestamp }}-${{ steps.meta.outputs.sha_short }} [skip ci]"
         git push
+        
+    - name: Send Telegram notification
+      if: always()
+      uses: cbrgm/telegram-github-action@v1
+      with:
+        token: ${{ secrets.TELEGRAM_TOKEN }}
+        to: ${{ secrets.TELEGRAM_CHAT_ID }}
+        message: |
+          ${{ job.status == 'success' && '✅' || '❌' }} *CI/CD Pipeline ${{ job.status }}*
+          
+          📦 *Репозиторий:* ${{ github.repository }}
+          🌿 *Ветка:* ${{ github.ref_name }}
+          👤 *Автор:* ${{ github.actor }}
+          💬 *Коммит:* ${{ github.event.head_commit.message }}
+          🔗 *Ссылка:* ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}

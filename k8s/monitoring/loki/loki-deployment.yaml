@@ -13,17 +13,6 @@ spec:
       labels:
         app: loki
     spec:
-      securityContext:
-        runAsUser: 10001
-        runAsGroup: 10001
-        fsGroup: 10001
-      initContainers:
-      - name: prepare-storage
-        image: busybox
-        command: ["sh", "-c", "mkdir -p /loki/{chunks,index,cache} && chown -R 10001:10001 /loki"]
-        volumeMounts:
-        - name: storage
-          mountPath: /loki
       containers:
         - name: loki
           image: grafana/loki:2.9.0

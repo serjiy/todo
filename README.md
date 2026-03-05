@@ -2,7 +2,6 @@
 
 Простое приложение для управления задачами.  
 Данные хранятся в MongoDB.  
-Приложение отдаёт метрики в формате Prometheus по адресу `/metrics`.
 
 ## ✅ Что сделано
 
@@ -28,19 +27,22 @@
   - Ошибки
 - Все метрики приложения доступны по адресу `/metrics`
 
-### 🧹 Порядок в манифестах
-- Убраны старые файлы
-- Единый стиль лейблов (`app: todo`, `app: mongo` и т.д.)
-- Все компоненты описаны в отдельных файлах
+### 📜 Логирование (Loki + Promtail)
+
+- Loki — централизованное хранилище логов, легковесная альтернатива Elasticsearch
+- Promtail — сборщик логов, работает на каждой ноде и отправляет логи в Loki
+- Интеграция с Grafana — логи доступны прямо в интерфейсе Grafana (Explore → Loki)
+- Собираются логи — от самого приложения, MongoDB, Prometheus и системных компонентов
+- Долговечность — Loki настроен с PersistentVolume, логи не теряются при перезапуске
 
 ### 📁 Структура проекта
 
 ```
-todo/									# Корень проекта
+todo/									                  # Корень проекта
 ├── app.py                              # Само Flask-приложение. Здесь логика добавления/удаления задач, роуты (/list, /metrics) и счетчики для Prometheus
 ├── requirements.txt                    # Список зависимостей: Flask, pymongo (для связи с MongoDB), prometheus_client (для метрик)
 ├── Dockerfile                          # Инструкция, как из кода сделать Docker-образ
-├── docker-compose.yml   				# Для локального запуска без Kubernetes: поднимает Flask + MongoDB одной командой 
+├── docker-compose.yml   				        # Для локального запуска без Kubernetes: поднимает Flask + MongoDB одной командой 
 │             
 ├── .gitignore                          # Список файлов и папок, которые Git не должен отслеживать (__pycache__, .env, .idea, etc.)
 ├── .dockerignore                       # Список файлов, которые не должны попадать в Docker-образ (аналог .gitignore для Docker)
@@ -82,24 +84,22 @@ todo/									# Корень проекта
 └── start.sh                              # Скрипт для полного развертывания на Linux (протестировано в Ubuntu 24.04 LTS)
 ```
 
-## 🚀 Запуск на Windows (локально)
-
-Если хочешь **всё сразу и много** — выполняй по шагам в PowerShell:
+## 🚀 Запуск в Windows (локально)
 
 ```powershell
-# 1. Запусти Docker Desktop
+1. Запусти Docker Desktop
 Start-Process "C:\Program Files\Docker\Docker\Docker Desktop.exe"
 
-# 2. Запусти ВСЕ существующие контейнеры (которые не запущены)
+2. Запусти ВСЕ существующие контейнеры (которые не запущены)
 docker start $(docker ps -a -q -f status=exited -f status=created)
 
-# 3. Запусти Minikube
+3. Запусти Minikube
 minikube start --driver=docker
 
-# 4. Проверь Minikube
+4. Проверь Minikube
 minikube status
 
-# 5. Примени все манифесты (перейди в папку k8s)
+5. Примени все манифесты (перейди в папку k8s)
 cd C:\*\todo\k8s
 
 kubectl apply -f mongo-pv.yaml
@@ -113,44 +113,31 @@ kubectl apply -f monitoring/
 
 где * путь до папки todo\k8s
 
-# 6. Запусти туннель (ВАЖНО: окно должно оставаться открытым)
+6. Запусти туннель (ВАЖНО: окно должно оставаться открытым)
 minikube tunnel
 
-# 7. В новом окне PowerShell проверь поды
+7. В новом окне PowerShell проверь поды
 kubectl get pods -w
 
-# 8. Проверь Ingress
+8. Проверь Ingress
 kubectl get ingress
 
-# 9. Открой Grafana
+9. Открой Grafana
 minikube service grafana
 
-# 10. Открой Prometheus (для проверки)
+10. Открой Prometheus (для проверки)
 minikube service prometheus
 
-# 11. Проверь логи (Loki)
-# Проверь, что под Loki запустился
+11. Проверь логи (Loki)
+Проверь, что под Loki запустился:
 kubectl get pods -l app=loki
 
-# В Grafana: Explore → выбери Loki → введи {app="todo"} → Run query
-# Если Loki нет в списке источников: Configuration → Data Sources → Add → Loki → URL: http://loki:3100
+В Grafana: Explore → выбери Loki → введи {app="todo"} → Run query
+Если Loki нет в списке источников: Configuration → Data Sources → Add → Loki → URL: http://loki:3100
 
-# 12. Проверь приложение в браузере
+12. Проверь приложение в браузере
 http://todo.local/list
-
-## 📊 Работа с HPA (автомасштабирование)
-
-```powershell
-# Посмотреть все HPA в кластере
-kubectl get hpa
-
-# Посмотреть конкретный HPA
-kubectl get hpa todo-app-hpa
-
-# Следить за HPA в реальном времени
-kubectl get hpa -w
 ```
-
 ## ⚠️ Важно для Windows
 
 1. Добавить запись в `C:\Windows\System32\drivers\etc\hosts`:
@@ -159,6 +146,50 @@ kubectl get hpa -w
    ```
 2. Docker Desktop должен быть **запущен** перед `minikube start`
 3. Туннель (`minikube tunnel`) должен работать **всё время**, пока пользуешься приложением
+
+## 📊 Работа с HPA (автомасштабирование)
+
+```powershell
+Посмотреть все HPA в кластере
+kubectl get hpa
+
+Посмотреть конкретный HPA
+kubectl get hpa todo-app-hpa
+
+Следить за HPA в реальном времени
+kubectl get hpa -w
+```
+
+### 🐧 Запуск в Linux (автоматический)
+
+Для Linux (проверено на Ubuntu 22.04/24.04) весь процесс развёртывания автоматизирован с помощью скрипта **`start.sh`**. Находится в корневой папке проекта.
+
+```bash
+1. Сделай скрипт исполняемым
+chmod +x ~/todo/start.sh
+
+2. Запусти развёртывание
+~/todo/start.sh
+```
+
+**Что сделает скрипт:**
+* Проверит работу Docker и права пользователя
+* Запустит Minikube (если ещё не запущен)
+* Включит Ingress-контроллер
+* Последовательно применит все манифесты из `k8s/`:
+  * Постоянное хранилище для MongoDB
+  * MongoDB, приложение, сервисы, Ingress, HPA
+  * Prometheus и Grafana
+  * Loki и Promtail
+* Ожидает полного запуска всех компонентов
+* Запускает `minikube tunnel` в фоновом режиме
+* Автоматически настраивает `/etc/hosts` (IP кластера)
+* Проверяет доступность приложения
+
+**После успешного выполнения:**
+* Приложение будет доступно по адресу `http://todo.local/list`
+* Мониторинг открывается командами `minikube service grafana` и `minikube service prometheus`
+* Логи туннеля можно смотреть: `tail -f /tmp/minikube-tunnel.log`
 
 ### ⚙️ CI/CD (GitHub Actions)
 
@@ -169,34 +200,6 @@ kubectl get hpa -w
 2. Уникальный тег вида 20260219-101831-fe63054 (дата+время+хэш коммита) — для откатов и истории
 - Автоматически обновляется файл k8s/deployment.yaml в репозитории — в него подставляется новый тег образа
 - Работает через GitHub Actions
-
-
-### 🐧 Запуск на Linux (автоматический)
-
-Для Linux (проверено на Ubuntu 22.04/24.04) весь процесс развёртывания автоматизирован с помощью скрипта **`start.sh`**. Он находится в корневой папке проекта.
-
-**Что нужно сделать:**
-
-```bash
-# 1. Сделать скрипт исполняемым (достаточно одного раза)
-chmod +x ~/todo/start.sh
-
-# 2. Запустить развёртывание
-~/todo/start.sh
-
-**Что сделает скрипт:**
-* Проверит Docker и права пользователя
-* Запустит Minikube и включит Ingress
-* Развернёт всё приложение с базой данных
-* Установит Prometheus, Grafana, Loki и Promtail
-* Настроит туннель и пропишет правильный IP в `/etc/hosts`
-* Дождётся готовности всех компонентов и проверит доступность приложения
-
-**После успешного выполнения:**
-* Приложение будет доступно по адресу `http://todo.local/list`
-* Мониторинг открывается командами `minikube service grafana` и `minikube service prometheus`
-* Логи туннеля можно смотреть: `tail -f /tmp/minikube-tunnel.log`
-
 
 ### 🤖 Telegram-уведомления
 
@@ -215,25 +218,4 @@ chmod +x ~/todo/start.sh
   * `TELEGRAM_TOKEN` — токен бота
   * `TELEGRAM_CHAT_ID` — ID чата для уведомлений
 
-**Результат:** ты всегда в курсе состояния проекта, даже если не у компьютера.
 
-### 📜 Логирование (Loki + Promtail)
-
-- **Loki** — централизованное хранилище логов, легковесная альтернатива Elasticsearch
-- **Promtail** — сборщик логов, работает на каждой ноде и отправляет логи в Loki
-- **Интеграция с Grafana** — логи доступны прямо в интерфейсе Grafana (Explore → Loki)
-- **Собираются все логи** — от самого приложения, MongoDB, Prometheus и системных компонентов
-- **Долговечность** — Loki настроен с PersistentVolume, логи не теряются при перезапуске
-
-### 🐧 Запуск на Linux (автоматический)
-
-Для Linux (проверено на Ubuntu 22.04/24.04) весь процесс развёртывания автоматизирован с помощью скрипта **`start.sh`**. Он находится в корневой папке проекта.
-
-**Что нужно сделать:**
-
-```bash
-# 1. Сделать скрипт исполняемым (достаточно одного раза)
-chmod +x ~/todo/start.sh
-
-# 2. Запустить развёртывание
-~/todo/start.sh

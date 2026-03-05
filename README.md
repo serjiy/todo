@@ -1,4 +1,4 @@
-# ToDo List — приложение на Flask + MongoDB
+## ToDo List — приложение на Flask + MongoDB
 
 Простое приложение для управления задачами.  
 Данные хранятся в MongoDB.  

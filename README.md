@@ -38,11 +38,11 @@
 ### 📁 Структура проекта
 
 ```
-todo/									              # Корень проекта
+todo/									# Корень проекта
 ├── app.py                              # Само Flask-приложение. Здесь логика добавления/удаления задач, роуты (/list, /metrics) и счетчики для Prometheus
 ├── requirements.txt                    # Список зависимостей: Flask, pymongo (для связи с MongoDB), prometheus_client (для метрик)
 ├── Dockerfile                          # Инструкция, как из кода сделать Docker-образ
-├── docker-compose.yml   				        # Для локального запуска без Kubernetes: поднимает Flask + MongoDB одной командой 
+├── docker-compose.yml   				# Для локального запуска без Kubernetes: поднимает Flask + MongoDB одной командой 
 │             
 ├── .gitignore                          # Список файлов и папок, которые Git не должен отслеживать (__pycache__, .env, .idea, etc.)
 ├── .dockerignore                       # Список файлов, которые не должны попадать в Docker-образ (аналог .gitignore для Docker)

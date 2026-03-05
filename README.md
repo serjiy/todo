@@ -38,7 +38,7 @@
 ### 📁 Структура проекта
 
 ```
-todo/									                  # Корень проекта
+todo/									              # Корень проекта
 ├── app.py                              # Само Flask-приложение. Здесь логика добавления/удаления задач, роуты (/list, /metrics) и счетчики для Prometheus
 ├── requirements.txt                    # Список зависимостей: Flask, pymongo (для связи с MongoDB), prometheus_client (для метрик)
 ├── Dockerfile                          # Инструкция, как из кода сделать Docker-образ

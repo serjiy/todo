@@ -128,9 +128,15 @@ minikube service grafana
 # 10. Открой Prometheus (для проверки)
 minikube service prometheus
 
-# 11. Проверь приложение в браузере
+# 11. Проверь логи (Loki)
+# Проверь, что под Loki запустился
+kubectl get pods -l app=loki
+
+# В Grafana: Explore → выбери Loki → введи {app="todo"} → Run query
+# Если Loki нет в списке источников: Configuration → Data Sources → Add → Loki → URL: http://loki:3100
+
+# 12. Проверь приложение в браузере
 http://todo.local/list
-```
 
 ## 📊 Работа с HPA (автомасштабирование)
 

@@ -33,9 +33,7 @@ spec:
     spec:
       containers:
       - name: todo
-        # Имя контейнера внутри пода.
         image: serjiy/todo:20260305-134021-13d0797
-        # Образ из Docker Hub с конкретным тегом (дата+хэш коммита).
         imagePullPolicy: Always
         # Политика загрузки образа — Always, чтобы при перезапуске всегда была актуальная версия.
         ports:

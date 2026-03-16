@@ -1,37 +1,47 @@
 name: CI/CD Pipeline
+# Название пайплайна — отображается в интерфейсе GitHub Actions.
 
 on:
   push:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+# Workflow запускается при пуше в main или при создании пулл-реквеста в main.
 
 env:
   DOCKERHUB_REPO: ${{ secrets.DOCKERHUB_USERNAME }}/todo
+  # Переменная окружения с именем репозитория на Docker Hub.
+  # Значение подставляется из секретов.
 
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
-    
+    # Job выполняется на виртуальной машине с Ubuntu.
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-      
+      # Скачивает код репозитория для дальнейшей работы.
+
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
-      
+      # Настраивает Docker Buildx для сборки образов.
+
     - name: Login to Docker Hub
       uses: docker/login-action@v3
       with:
         username: ${{ secrets.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_TOKEN }}
-        
+      # Выполняет вход в Docker Hub, используя логин и токен из секретов.
+
     - name: Generate tags
       id: meta
       run: |
         echo "timestamp=$(date +'%Y%m%d-%H%M%S')" >> $GITHUB_OUTPUT
         echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
-        
+      # Генерирует два значения: временную метку и короткий хэш коммита.
+      # Сохраняет их в переменные для использования в следующих шагах.
+
     - name: Build and push
       uses: docker/build-push-action@v6
       with:
@@ -40,12 +50,17 @@ jobs:
         tags: |
           ${{ env.DOCKERHUB_REPO }}:latest
           ${{ env.DOCKERHUB_REPO }}:${{ steps.meta.outputs.timestamp }}-${{ steps.meta.outputs.sha_short }}
-          
+      # Собирает Docker-образ и пушит его в Docker Hub с двумя тегами:
+      #   latest — всегда указывает на последнюю версию.
+      #   уникальный тег (дата+время+хэш) — для фиксации конкретной версии.
+
     - name: Update Kubernetes manifest
       run: |
         NEW_TAG="${{ steps.meta.outputs.timestamp }}-${{ steps.meta.outputs.sha_short }}"
         sed -i "s|image: .*|image: ${{ secrets.DOCKERHUB_USERNAME }}/todo:${NEW_TAG}|g" k8s/deployment.yaml
-        
+      # Обновляет файл k8s/deployment.yaml, заменяя строку с образом на новый тег.
+      # sed -i редактирует файл напрямую.
+
     - name: Commit updated manifest
       run: |
         git config --global user.name 'github-actions[bot]'
@@ -53,9 +68,13 @@ jobs:
         git add k8s/deployment.yaml
         git diff --quiet && git diff --staged --quiet || git commit -m "chore: update image tag to ${{ steps.meta.outputs.timestamp }}-${{ steps.meta.outputs.sha_short }} [skip ci]"
         git push
-        
+      # Коммитит изменённый манифест обратно в репозиторий.
+      # [skip ci] предотвращает повторный запуск пайплайна.
+      # git diff проверяет, были ли изменения, чтобы не создавать пустые коммиты.
+
     - name: Send Telegram notification
       if: always()
+      # Шаг выполняется всегда, даже при ошибке на предыдущих шагах.
       uses: cbrgm/telegram-github-action@v1
       with:
         token: ${{ secrets.TELEGRAM_TOKEN }}
@@ -68,3 +87,17 @@ jobs:
           👤 *Автор:* ${{ github.actor }}
           💬 *Коммит:* ${{ github.event.head_commit.message }}
           🔗 *Ссылка:* ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      # Отправляет уведомление в Telegram о завершении пайплайна.
+      # Сообщение содержит статус, информацию о репозитории и ссылку на запуск.
+      
+# КАК ЭТО РАБОТАЕТ:
+# -----------------
+# 1. При пуше в ветку main GitHub Actions запускает этот workflow.
+# 2. Виртуальная машина скачивает код и настраивает Docker.
+# 3. Выполняется вход в Docker Hub с использованием секретов.
+# 4. Генерируются теги на основе текущего времени и хэша коммита.
+# 5. Собирается Docker-образ и пушится в Docker Hub с двумя тегами.
+# 6. Файл манифеста k8s/deployment.yaml обновляется — в него подставляется новый тег.
+# 7. Изменённый манифест коммитится обратно в репозиторий.
+# 8. В Telegram отправляется уведомление о результате сборки.
+# 9. При следующем деплое Kubernetes использует обновлённый манифест с новой версией образа.

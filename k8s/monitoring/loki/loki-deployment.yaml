@@ -1,34 +1,66 @@
 apiVersion: apps/v1
 kind: Deployment
+
 metadata:
   name: loki
+  # Имя деплоймента.
   namespace: default
+
 spec:
   replicas: 1
+  # Одна реплика Loki.
+
   selector:
     matchLabels:
       app: loki
+  # Деплоймент управляет подами с меткой app: loki.
+
   template:
     metadata:
       labels:
         app: loki
+      # Поды получают метку app: loki.
+
     spec:
       containers:
         - name: loki
           image: grafana/loki:2.9.0
+          # Образ Loki версии 2.9.0.
+
           args:
             - -config.file=/etc/loki/loki.yaml
+          # При запуске Loki получает аргумент с путём к конфигу.
+
           ports:
             - containerPort: 3100
               name: http
+          # Loki слушает порт 3100.
+
           volumeMounts:
             - name: config
               mountPath: /etc/loki
+            # Монтирует том с конфигом в папку /etc/loki.
             - name: storage
               mountPath: /loki
+            # Монтирует том для хранения данных в папку /loki.
+
       volumes:
         - name: config
           configMap:
             name: loki-config
+        # Том с конфигом берётся из ConfigMap loki-config.
+
         - name: storage
           emptyDir: {}
+        # Временное хранилище для данных.
+        # При перезапуске пода данные теряются.
+        
+# КАК ЭТО РАБОТАЕТ:
+# -----------------
+# 1. Kubernetes создаёт под с Loki на основе этого деплоймента.
+# 2. Под монтирует ConfigMap с конфигом в папку /etc/loki.
+# 3. Loki читает конфиг и запускается, слушая порт 3100.
+# 4. Данные (индексы и логи) сохраняются в папку /loki (временное хранилище).
+# 5. Сервис (loki-service) открывает доступ к Loki для других компонентов.
+# 6. Promtail отправляет логи на адрес loki:3100.
+# 7. Grafana подключается к тому же адресу для отображения логов.

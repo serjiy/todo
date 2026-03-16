@@ -1,46 +1,74 @@
 apiVersion: apps/v1
 kind: Deployment
+# Deployment — контроллер, который управляет подами и поддерживает нужное количество реплик.
+
 metadata:
   name: todo-app
+  # Имя деплоймента. Используется для обращения через kubectl.
   labels:
     app: todo
+  # Метки деплоймента для фильтрации и идентификации.
+
 spec:
   replicas: 2
+  # Задано 2 работающих пода. При падении одного создаётся новый.
+
   selector:
     matchLabels:
       app: todo
+  # Деплоймент управляет подами с меткой app: todo.
+
   template:
     metadata:
       labels:
         app: todo
+      # Поды получают метку app: todo для связи с сервисом.
       annotations:
         prometheus.io/scrape: "true"
         prometheus.io/port: "5000"
         prometheus.io/path: "/metrics"
+      # Аннотации для Prometheus: указывают, что с подов нужно собирать метрики,
+      # на каком порту и по какому пути.
+
     spec:
       containers:
       - name: todo
+        # Имя контейнера внутри пода.
         image: serjiy/todo:20260305-134021-13d0797
+        # Образ из Docker Hub с конкретным тегом (дата+хэш коммита).
         imagePullPolicy: Always
+        # Политика загрузки образа — Always, чтобы при перезапуске всегда была актуальная версия.
         ports:
         - containerPort: 5000
+        # Контейнер слушает порт 5000.
+
         env:
         - name: MONGO_HOST
           value: "mongo"
         - name: MONGO_PORT
           value: "27017"
+        # Переменные окружения для подключения к MongoDB. Адрес базы — имя сервиса mongo.
+
         readinessProbe:
           httpGet:
             path: /health
             port: 5000
           initialDelaySeconds: 10
           periodSeconds: 5
+        # Readiness-проба проверяет готовность пода принимать трафик.
+        # Запрос к /health, порт 5000.
+        # Первая проверка через 10 секунд, затем каждые 5 секунд.
+
         livenessProbe:
           httpGet:
             path: /health
             port: 5000
           initialDelaySeconds: 15
           periodSeconds: 10
+        # Liveness-проба проверяет, жив ли под.
+        # Если проба не проходит, под перезапускается.
+        # Первая проверка через 15 секунд, затем каждые 10 секунд.
+
         resources:
           requests:
             cpu: "200m"
@@ -48,3 +76,16 @@ spec:
           limits:
             cpu: "500m"
             memory: "512Mi"
+        # Запросы ресурсов: 0.2 CPU и 256 MiB памяти гарантируется.
+        # Лимиты: не более 0.5 CPU и 512 MiB памяти.
+        
+# КАК ЭТО РАБОТАЕТ:
+# -----------------
+# 1. На основе этого файла Kubernetes создаёт Deployment с именем todo-app.
+# 2. Deployment поддерживает 2 работающих пода с меткой app: todo.
+# 3. Если под падает, Deployment создаёт новый, возвращая количество к 2.
+# 4. При обновлении образа (новый тег) Deployment выполняет rolling update — заменяет поды по очереди.
+# 5. Readiness-проба не даёт направлять трафик в неготовый под.
+# 6. Liveness-проба перезапускает под, если он завис.
+# 7. Аннотации сообщают Prometheus, что с этого пода нужно собирать метрики.
+# 8. Запросы ресурсов помогают планировщику Kubernetes правильно размещать поды на нодах.

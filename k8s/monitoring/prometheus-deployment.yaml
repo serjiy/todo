@@ -1,37 +1,73 @@
 apiVersion: apps/v1
 kind: Deployment
+
 metadata:
   name: prometheus
+  # Имя деплоймента.
   labels:
     app: prometheus
+  # Метка для идентификации.
+
 spec:
   replicas: 1
+  # Одна реплика Prometheus.
+
   selector:
     matchLabels:
       app: prometheus
+  # Деплоймент управляет подами с меткой app: prometheus.
+
   template:
     metadata:
       labels:
         app: prometheus
+      # Поды получают метку app: prometheus.
+
     spec:
       serviceAccountName: prometheus
+      # Сервисный аккаунт для доступа к Kubernetes API (из prometheus-rbac.yaml).
+
       containers:
       - name: prometheus
         image: prom/prometheus:latest
+        # Образ Prometheus.
+
         args:
         - "--config.file=/etc/prometheus/prometheus.yml"
+        # Путь к конфигурационному файлу.
         - "--storage.tsdb.path=/prometheus"
+        # Путь для хранения метрик.
+
         ports:
         - containerPort: 9090
           name: web
+        # Prometheus слушает порт 9090 (веб-интерфейс).
+
         volumeMounts:
         - name: config
           mountPath: /etc/prometheus
+        # Монтируется том с конфигом.
         - name: data
           mountPath: /prometheus
+        # Монтируется том для данных.
+
       volumes:
       - name: config
         configMap:
           name: prometheus-config
+      # Том с конфигом из ConfigMap.
+
       - name: data
         emptyDir: {}
+      # Временное хранилище для метрик. Данные хранятся только пока жив под.
+      
+# КАК ЭТО РАБОТАЕТ:
+# -----------------
+# 1. Kubernetes создаёт под с Prometheus.
+# 2. Prometheus читает конфиг из /etc/prometheus/prometheus.yml (из ConfigMap).
+# 3. Сервисный аккаунт даёт права на чтение подов через Kubernetes API.
+# 4. Prometheus получает список подов для сбора метрик согласно конфигу.
+# 5. Каждые 15 секунд Prometheus собирает метрики с целевых подов.
+# 6. Метрики сохраняются в /prometheus (в томе data).
+# 7. Веб-интерфейс доступен на порту 9090.
+# 8. Grafana подключается к Prometheus для визуализации метрик.

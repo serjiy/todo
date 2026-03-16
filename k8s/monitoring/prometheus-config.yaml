@@ -1,46 +1,78 @@
 apiVersion: v1
 kind: ConfigMap
+# ConfigMap — хранилище конфигурационных файлов в Kubernetes.
+
 metadata:
   name: prometheus-config
+  # Имя конфигмапа. На него ссылается под Prometheus.
   labels:
     app: prometheus
+  # Метка для идентификации.
+
 data:
   prometheus.yml: |
+    # Конфигурационный файл Prometheus.
+    
     global:
       scrape_interval: 15s
+      # Интервал сбора метрик по умолчанию.
       evaluation_interval: 15s
+      # Интервал оценки правил алертинга.
     
     scrape_configs:
     - job_name: 'kubernetes-pods'
+      # Задача по сбору метрик с подов Kubernetes.
+      
       kubernetes_sd_configs:
       - role: pod
+      # Используется механизм обнаружения подов через Kubernetes API.
       
-      # Это самая важная часть — говорим Prometheus'у забирать метрики с подов,
-      # у которых есть аннотация prometheus.io/scrape: "true"
       relabel_configs:
+      # Правила изменения меток перед сохранением.
+      
       - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
         action: keep
         regex: true
+      # Оставляются только поды с аннотацией prometheus.io/scrape: "true".
       
       - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
         action: replace
         target_label: __metrics_path__
         regex: (.+)
+      # Используется путь из аннотации prometheus.io/path (по умолчанию /metrics).
       
       - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
         action: replace
         regex: ([^:]+)(?::\d+)?;(\d+)
         replacement: $1:$2
         target_label: __address__
+      # Формируется адрес для сбора метрик: IP_пода:порт (порт из аннотации prometheus.io/port).
       
       - source_labels: [__meta_kubernetes_pod_node_name]
         action: replace
         target_label: node
+      # Добавляется метка с именем ноды.
       
       - source_labels: [__meta_kubernetes_pod_name]
         action: replace
         target_label: pod
+      # Добавляется метка с именем пода.
       
       - source_labels: [__meta_kubernetes_namespace]
         action: replace
         target_label: namespace
+      # Добавляется метка с namespace'ом.
+      
+# КАК ЭТО РАБОТАЕТ:
+# -----------------
+# 1. Prometheus читает конфиг из ConfigMap при запуске.
+# 2. Через Kubernetes API получает список всех подов.
+# 3. Для каждого пода проверяются аннотации:
+#    - scrape: "true" — под включается в сбор.
+#    - path — путь для метрик (по умолчанию /metrics).
+#    - port — порт для сбора.
+# 4. Формируется список целей вида IP_пода:порт.
+# 5. Каждые 15 секунд Prometheus собирает метрики с этих адресов.
+# 6. К метрикам добавляются метки pod, namespace, node.
+# 7. Метрики сохраняются и становятся доступны для запросов через PromQL.
+# 8. Grafana подключается к Prometheus для визуализации.

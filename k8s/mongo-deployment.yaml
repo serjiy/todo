@@ -1,28 +1,54 @@
 apiVersion: apps/v1
 kind: Deployment
+# Deployment для MongoDB.
+
 metadata:
   name: mongo
+  # Имя деплоймента.
   labels:
     app: mongo
+  # Метка для идентификации.
+
 spec:
   replicas: 1
+  # Одна реплика MongoDB. Несколько подов не могут одновременно писать в один PVC.
+
   selector:
     matchLabels:
       app: mongo
+  # Деплоймент управляет подами с меткой app: mongo.
+
   template:
     metadata:
       labels:
         app: mongo
+      # Поды получают метку app: mongo для связи с сервисом.
+
     spec:
       containers:
       - name: mongo
         image: mongo:latest
+        # Официальный образ MongoDB.
         ports:
         - containerPort: 27017
+        # Стандартный порт MongoDB.
+
         volumeMounts:
         - name: mongo-storage
           mountPath: /data/db
+        # Том монтируется в папку /data/db — место хранения данных MongoDB.
+
       volumes:
       - name: mongo-storage
         persistentVolumeClaim:
           claimName: mongo-pvc
+      # Том использует PersistentVolumeClaim с именем mongo-pvc (из отдельного файла).
+      
+# КАК ЭТО РАБОТАЕТ:
+# -----------------
+# 1. Kubernetes создаёт под с MongoDB на основе этого деплоймента.
+# 2. Под монтирует том через PVC mongo-pvc в папку /data/db.
+# 3. Данные MongoDB сохраняются на постоянном томе и не теряются при пересоздании пода.
+# 4. Сервис mongo (из mongo-service.yaml) находит под по метке app: mongo.
+# 5. Flask-приложение подключается к базе по адресу mongo:27017.
+# 6. Используется только одна реплика, так как несколько подов не могут писать в один PVC.

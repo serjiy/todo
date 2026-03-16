@@ -1,22 +1,51 @@
 apiVersion: v1
 kind: ConfigMap
+# ConfigMap с конфигурацией Promtail — сборщика логов.
+
 metadata:
   name: promtail-config
   namespace: default
+
 data:
   promtail.yaml: |
+    # Конфигурационный файл Promtail.
+    
     server:
       http_listen_port: 9080
+      # Promtail открывает порт 9080 для внутренних проверок.
       grpc_listen_port: 0
+      # gRPC порт отключён (не используется).
+    
     positions:
       filename: /run/promtail/positions.yaml
+      # Файл, где Promtail хранит информацию о том, сколько байт из каждого лога уже отправлено.
+      # Это нужно, чтобы при перезапуске не отправлять одни и те же логи заново.
+    
     clients:
       - url: http://loki:3100/loki/api/v1/push
+      # Адрес Loki, куда Promtail отправляет логи.
+      # Использует имя сервиса loki внутри кластера.
+    
     scrape_configs:
       - job_name: containers
+        # Задача сбора логов с контейнеров.
         static_configs:
         - targets:
             - localhost
+          # Цель для сбора — локальный сервер (сам под Promtail).
           labels:
             job: containerlogs
+            # Добавляет метку job: containerlogs к каждому логу.
             __path__: /var/log/pods/**/*.log
+            # Путь к файлам логов. Promtail читает все файлы, подходящие под шаблон.
+            # В Kubernetes логи контейнеров лежат в /var/log/pods/...
+            
+# КАК ЭТО РАБОТАЕТ:
+# -----------------
+# 1. Promtail запускается на каждой ноде (как DaemonSet) и читает этот конфиг.
+# 2. Он отслеживает все файлы логов по пути /var/log/pods/**/*.log.
+# 3. Для каждого лога Promtail запоминает в positions.yaml, сколько байт уже прочитано.
+# 4. Новые строки лога отправляются в Loki по адресу http://loki:3100/loki/api/v1/push.
+# 5. При перезапуске Promtail читает positions.yaml и продолжает с того места, где остановился.
+# 6. Порт 9080 используется для метрик самого Promtail (не обязательно).
+# 7. Все логи получают метку job: containerlogs для удобной фильтрации в Loki.

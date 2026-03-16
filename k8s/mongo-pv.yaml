@@ -1,29 +1,56 @@
 apiVersion: v1
 kind: PersistentVolume
+# PersistentVolume — абстракция физического хранилища в кластере.
+
 metadata:
   name: mongo-pv
+  # Имя тома.
   labels:
     type: local
-    app: mongo  # лейбл для связи
+    app: mongo
+  # Метки: type указывает на локальное хранилище, app — для какой базы.
+
 spec:
   storageClassName: manual
+  # Класс хранения — ручное управление, без динамического провижининга.
   capacity:
     storage: 1Gi
+  # Ёмкость тома — 1 гигабайт.
   accessModes:
     - ReadWriteOnce
+  # Режим доступа — только один под может писать, остальные читать.
   hostPath:
     path: "/mnt/data/mongo"
+  # Физический путь на ноде Minikube, где хранятся данные.
+
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
+# PersistentVolumeClaim — запрос на использование хранилища.
+
 metadata:
   name: mongo-pvc
+  # Имя PVC.
   labels:
-    app: mongo  # лейбл для связи
+    app: mongo
+  # Метка для идентификации.
+
 spec:
   storageClassName: manual
   accessModes:
     - ReadWriteOnce
+  # Запрашивается тот же режим доступа.
   resources:
     requests:
       storage: 1Gi
+  # Запрашивается 1 гигабайт.
+  
+# КАК ЭТО РАБОТАЕТ:
+# -----------------
+# 1. PV создаётся как локальное хранилище на ноде Minikube по пути /mnt/data/mongo.
+# 2. PVC запрашивает 1Gi хранилища с режимом ReadWriteOnce.
+# 3. Kubernetes связывает PV и PVC, так как их параметры совпадают.
+# 4. Под MongoDB в деплойменте ссылается на PVC mongo-pvc.
+# 5. При монтировании PVC в под, данные сохраняются на PV.
+# 6. Даже если под удалить, PVC и PV остаются, данные не теряются.
+# 7. При создании нового пода с тем же PVC, данные снова становятся доступны.

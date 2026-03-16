@@ -1,39 +1,74 @@
 apiVersion: v1
 kind: ServiceAccount
+# ServiceAccount — учётная запись для подов Prometheus.
+
 metadata:
   name: prometheus
+  # Имя сервисного аккаунта. Используется в deployment.yaml.
   namespace: default
+
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
+# ClusterRole — набор разрешений на уровне всего кластера.
+
 metadata:
   name: prometheus
+  # Имя роли.
+
 rules:
 - apiGroups: [""]
+  # Core API группа.
   resources:
   - nodes
   - nodes/proxy
   - services
   - endpoints
   - pods
+  # Ресурсы для чтения: ноды, сервисы, поды.
   verbs: ["get", "list", "watch"]
+  # Разрешённые действия: получать, просматривать список, следить.
+
 - apiGroups:
   - extensions
+  # Группа API для Ingress.
   resources:
   - ingresses
+  # Разрешение на чтение Ingress.
   verbs: ["get", "list", "watch"]
+
 - nonResourceURLs: ["/metrics"]
+  # URL, не относящиеся к ресурсам.
   verbs: ["get"]
+  # Разрешение на получение метрик API-сервера.
+
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
+# ClusterRoleBinding — привязка роли к сервисному аккаунту.
+
 metadata:
   name: prometheus
+  # Имя привязки.
+
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: prometheus
+  # Привязывается роль prometheus.
+
 subjects:
 - kind: ServiceAccount
   name: prometheus
   namespace: default
+  # Привязывается к сервисному аккаунту prometheus.
+  
+# КАК ЭТО РАБОТАЕТ:
+# -----------------
+# 1. Создаётся сервисный аккаунт prometheus.
+# 2. Создаётся ClusterRole с правами на чтение подов, сервисов, нод и Ingress.
+# 3. ClusterRoleBinding связывает роль с сервисным аккаунтом.
+# 4. В deployment.yaml Prometheus указан этот сервисный аккаунт.
+# 5. Под Prometheus получает токен аккаунта и использует его для доступа к Kubernetes API.
+# 6. API проверяет права и разрешает чтение ресурсов.
+# 7. Prometheus получает список подов и их аннотации для динамической настройки сбора метрик.

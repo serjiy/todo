@@ -1,14 +1,35 @@
 apiVersion: v1
 kind: Service
+
 metadata:
   name: prometheus
+  # Имя сервиса. Внутри кластера доступен как "prometheus".
+  # Grafana подключается к Prometheus по адресу http://prometheus:9090.
   labels:
     app: prometheus
+  # Метка для идентификации сервиса.
+
 spec:
   selector:
     app: prometheus
+  # Сервис направляет трафик на поды с меткой app: prometheus.
+
   ports:
   - port: 9090
+    # Порт, на котором сервис доступен внутри кластера.
     targetPort: 9090
+    # Порт на поде (совпадает с containerPort в prometheus-deployment.yaml).
     name: web
-  type: NodePort  # Чтобы можно было зайти из браузера
+    # Имя порта.
+
+  type: NodePort
+  # Тип NodePort открывает доступ снаружи кластера через порт в диапазоне 30000-32767.
+  
+# КАК ЭТО РАБОТАЕТ:
+# -----------------
+# 1. Пользователь выполняет minikube service prometheus или обращается к NodePort.
+# 2. Запрос приходит в сервис prometheus на порт 9090.
+# 3. Сервис по селектору app: prometheus находит под с Prometheus.
+# 4. Запрос перенаправляется в под на порт 9090.
+# 5. Prometheus возвращает веб-интерфейс.
+# 6. Внутри кластера Grafana обращается к Prometheus по адресу "prometheus:9090".

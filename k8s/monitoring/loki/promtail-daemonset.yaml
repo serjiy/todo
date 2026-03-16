@@ -1,44 +1,82 @@
 apiVersion: apps/v1
 kind: DaemonSet
+# DaemonSet — запускает под на каждой ноде кластера.
+# Это нужно, потому что логи хранятся локально на каждой ноде.
+
 metadata:
   name: promtail
   namespace: default
+
 spec:
   selector:
     matchLabels:
       app: promtail
+  # DaemonSet управляет подами с меткой app: promtail.
+
   template:
     metadata:
       labels:
         app: promtail
+      # Каждый под получает метку app: promtail.
+
     spec:
       serviceAccountName: promtail
+      # Сервисный аккаунт с правами на чтение логов.
+
       containers:
         - name: promtail
           image: grafana/promtail:2.9.0
+          # Образ Promtail.
+
           args:
             - -config.file=/etc/promtail/promtail.yaml
+          # Аргумент с путём к конфигу.
+
           volumeMounts:
             - name: config
               mountPath: /etc/promtail
+            # Монтирует конфиг в папку /etc/promtail.
+
             - name: run
               mountPath: /run/promtail
+            # Монтирует папку для positions-файла.
+
             - name: containers
               mountPath: /var/lib/docker/containers
               readOnly: true
+            # Монтирует папку с логами Docker (для доступа к файлам).
+
             - name: pods
               mountPath: /var/log/pods
               readOnly: true
+            # Монтирует папку с логами подов Kubernetes.
+
       volumes:
         - name: config
           configMap:
             name: promtail-config
+        # Том с конфигом из ConfigMap.
+
         - name: run
           hostPath:
             path: /run/promtail
+        # Папка на хосте для positions.yaml (чтобы не терять прогресс при перезапуске).
+
         - name: containers
           hostPath:
             path: /var/lib/docker/containers
+        # Папка с логами Docker на хосте.
+
         - name: pods
           hostPath:
             path: /var/log/pods
+        # Папка с логами подов Kubernetes на хосте.
+        
+# КАК ЭТО РАБОТАЕТ:
+# -----------------
+# 1. DaemonSet гарантирует, что на каждой ноде кластера запущен под Promtail.
+# 2. Promtail монтирует папки с логами с хоста (/var/log/pods и /var/lib/docker/containers).
+# 3. По конфигу он читает все логи из этих папок и отправляет в Loki.
+# 4. Файл positions.yaml сохраняется на хосте, чтобы при перезапуске не терять прогресс.
+# 5. Сервисный аккаунт даёт Promtail права на чтение информации о подах (для меток).
+# 6. Благодаря DaemonSet логи собираются со всех нод автоматически.

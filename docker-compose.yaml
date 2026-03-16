@@ -1,27 +1,39 @@
 services:
   todo-flaskapp:
-    build: .                   
-    container_name: flask-app
+    build: .                   # Образ собирается из Dockerfile в текущей папке
+    container_name: flask-app  # Контейнер получает имя flask-app для удобства
     ports:
-      - "5000:5000"
+      - "5000:5000"            # Порт 5000 пробрасывается наружу — приложение доступно на localhost:5000
     environment:
-      - FLASK_ENV=development
-      - PORT=5000
-      - MONGO_HOST=mongo
-      - MONGO_PORT=27017
+      - FLASK_ENV=development   # Flask работает в режиме разработки (показывает ошибки)
+      - PORT=5000               # Приложение слушает порт 5000 внутри контейнера
+      - MONGO_HOST=mongo        # Адрес MongoDB — имя сервиса из этого же файла
+      - MONGO_PORT=27017        # Порт MongoDB
     depends_on:
       mongo:
-        condition: service_started   # ← ждём, пока mongo запустится 
-    restart: unless-stopped          # ← для разработки: перезапускается при сбое
+        condition: service_started   # Запуск Flask начинается после того, как контейнер mongo запущен
+    restart: unless-stopped          # Контейнер перезапускается при падении, но не после ручной остановки
 
   mongo:
-    image: mvertes/alpine-mongo:latest
+    image: mvertes/alpine-mongo:latest  # Используется лёгкий образ MongoDB на Alpine
     container_name: todo-mongo-1
     ports:
-      - "27017:27017"
+      - "27017:27017"           # Порт MongoDB пробрасывается наружу (для подключения извне)
     volumes:
-      - mongo-data:/data/db         # ←  volume DB
+      - mongo-data:/data/db     # Данные базы сохраняются в volume mongo-data
     restart: unless-stopped
 
 volumes:
-  mongo-data:                        # ← volume для данных MongoDB
+  mongo-data:                    # Именованный volume для хранения данных MongoDB отдельно от контейнера
+  
+# КАК ЭТО РАБОТАЕТ:
+# -----------------
+# 1. Команда docker compose up -d запускает оба контейнера одновременно.
+# 2. Образ для Flask собирается из локального Dockerfile.
+# 3. MongoDB использует готовый образ из Docker Hub.
+# 4. Docker Compose создаёт общую сеть, где контейнеры видят друг друга по именам (mongo, flask-app).
+# 5. Flask получает переменные окружения и подключается к MongoDB по имени mongo.
+# 6. Проброшенные порты позволяют открыть приложение в браузере (http://localhost:5000/list).
+# 7. Volume mongo-data сохраняет данные базы даже после остановки контейнеров.
+# 8. depends_on запускает MongoDB раньше Flask, чтобы избежать ошибок подключения.
+# 9. Вся конфигурация работает без Kubernetes — для быстрой разработки и тестирования.

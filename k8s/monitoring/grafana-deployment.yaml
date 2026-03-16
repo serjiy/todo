@@ -1,31 +1,60 @@
 apiVersion: apps/v1
 kind: Deployment
+
 metadata:
   name: grafana
+  # Имя деплоймента.
   labels:
     app: grafana
+  # Метка для идентификации.
+
 spec:
   replicas: 1
+  # Одна реплика Grafana.
+
   selector:
     matchLabels:
       app: grafana
+  # Деплоймент управляет подами с меткой app: grafana.
+
   template:
     metadata:
       labels:
         app: grafana
+      # Поды получают метку app: grafana.
+
     spec:
       containers:
       - name: grafana
         image: grafana/grafana:latest
+        # Образ Grafana.
+
         ports:
         - containerPort: 3000
           name: web
+        # Grafana слушает порт 3000.
+
         env:
         - name: GF_SECURITY_ADMIN_PASSWORD
-          value: "admin"  # Логин: admin, пароль: admin (поменяй при желании)
+          value: "admin"
+        # Устанавливается пароль администратора admin (логин по умолчанию admin).
+
         volumeMounts:
         - name: data
           mountPath: /var/lib/grafana
+        # Монтируется том для хранения данных Grafana.
+
       volumes:
       - name: data
-        emptyDir: {}  # Для простоты
+        emptyDir: {}
+        # Временное хранилище. Данные хранятся только пока жив под.
+        
+# КАК ЭТО РАБОТАЕТ:
+# -----------------
+# 1. Kubernetes создаёт под с Grafana.
+# 2. При запуске Grafana устанавливает пароль admin из переменной окружения.
+# 3. Grafana сохраняет данные (дашборды, источники, пользователей) в папку /var/lib/grafana.
+# 4. Данные хранятся в emptyDir — временно, только на время жизни пода.
+# 5. Сервис (отдельный файл) открывает доступ к Grafana на порту 3000.
+# 6. Пользователь заходит в интерфейс по адресу http://grafana:3000 (или через minikube service).
+# 7. При перезапуске пода все настройки теряются, так как emptyDir очищается.

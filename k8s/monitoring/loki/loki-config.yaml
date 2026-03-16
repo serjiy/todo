@@ -1,26 +1,40 @@
 apiVersion: v1
 kind: ConfigMap
+# ConfigMap — хранилище конфигурационных файлов. Loki монтирует его в под.
+
 metadata:
   name: loki-config
+  # Имя конфигмапа. Под Loki ссылается на него в volumeMounts.
   namespace: default
+
 data:
   loki.yaml: |
+    # Конфигурационный файл Loki.
+    
     auth_enabled: false
-
+    # Аутентификация отключена.
+    
     server:
       http_listen_port: 3100
-
+    # Loki слушает порт 3100.
+    
     common:
       path_prefix: /loki
+      # Корневая папка для данных Loki.
       storage:
         filesystem:
           chunks_directory: /loki/chunks
           rules_directory: /loki/rules
+      # Хранилище на файловой системе.
+      # chunks_directory — папка для логов.
+      # rules_directory — папка для правил.
       replication_factor: 1
+      # Одна реплика.
       ring:
         kvstore:
           store: inmemory
-
+      # Хранилище координации в памяти.
+    
     schema_config:
       configs:
         - from: 2020-10-24
@@ -30,9 +44,26 @@ data:
           index:
             prefix: index_
             period: 24h
-
+    # Настройки схемы хранения:
+    #   from — дата применения схемы.
+    #   store — тип хранилища индексов.
+    #   object_store — хранилище логов.
+    #   schema — версия схемы.
+    #   index.period — периодичность обновления индексов.
+    
     ruler:
       alertmanager_url: http://localhost:9093
-
+    # Настройки алертинга.
+    
     analytics:
       reporting_enabled: false
+    # Отправка статистики отключена.
+    
+# КАК ЭТО РАБОТАЕТ:
+# -----------------
+# 1. Kubernetes создаёт ConfigMap с этим файлом.
+# 2. Под Loki монтирует ConfigMap и читает конфиг при старте.
+# 3. Loki открывает порт 3100 и принимает логи от Promtail.
+# 4. Loki сохраняет индексы и сами логи в папке /loki.
+# 5. Индексы позволяют быстро искать логи по меткам.
+# 6. Grafana обращается к Loki по API для отображения логов.

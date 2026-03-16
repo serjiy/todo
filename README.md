@@ -218,4 +218,8 @@ chmod +x ~/todo/start.sh
   * `TELEGRAM_TOKEN` — токен бота
   * `TELEGRAM_CHAT_ID` — ID чата для уведомлений
 
+### Скриншоты приложения
+
+
+
 

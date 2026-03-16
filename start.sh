@@ -7,11 +7,11 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-# Определяю директорию проекта
+# Определяется директория проекта
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 K8S_DIR="$SCRIPT_DIR/k8s"
 
-# Функция для проверки успешности предыдущей команды
+# Функция проверки успешности предыдущей команды
 check_success() {
     if [ $? -eq 0 ]; then
         echo -e "${GREEN}✓ $1${NC}"
@@ -31,7 +31,7 @@ wait_for_pods() {
     local ready_count=0
     local total_count=0
     
-    echo -e "${YELLOW}⏳ Ожидаю запуск подов с лейблом $label (максимум ${timeout}с)...${NC}"
+    echo -e "${YELLOW}⏳ Ожидание запуска подов с лейблом $label (максимум ${timeout}с)...${NC}"
     
     while [ $elapsed -lt $timeout ]; do
         ready_count=$(kubectl get pods -l $label -o jsonpath='{.items[*].status.containerStatuses[0].ready}' 2>/dev/null | grep -o true | wc -l)
@@ -58,7 +58,7 @@ wait_for_tunnel() {
     local elapsed=0
     local INGRESS_IP=""
     
-    echo -e "${YELLOW}⏳ Проверяю работу туннеля (до ${timeout}с)...${NC}"
+    echo -e "${YELLOW}⏳ Проверка работы туннеля (до ${timeout}с)...${NC}"
     
     for i in {1..10}; do
         INGRESS_IP=$(kubectl get ingress todo-ingress -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null)
@@ -69,11 +69,11 @@ wait_for_tunnel() {
     done
     
     if [ -z "$INGRESS_IP" ] || [ "$INGRESS_IP" = "null" ]; then
-        echo -e "\n${YELLOW}⚠️ IP Ingress не получен, использую IP Minikube: $(minikube ip)${NC}"
+        echo -e "\n${YELLOW}⚠️ IP Ingress не получен, используется IP Minikube: $(minikube ip)${NC}"
         INGRESS_IP=$(minikube ip)
     fi
     
-    echo -e "${YELLOW}📌 Проверяю доступ приложения по IP: $INGRESS_IP${NC}"
+    echo -e "${YELLOW}📌 Проверка доступа приложения по IP: $INGRESS_IP${NC}"
     
     while [ $elapsed -lt $timeout ]; do
         if ! pgrep -f "minikube tunnel" > /dev/null; then
@@ -101,8 +101,8 @@ echo -e "${BLUE}========================================${NC}"
 echo -e "${YELLOW}📁 Проект находится в: $SCRIPT_DIR${NC}"
 echo -e "${YELLOW}📁 Манифесты Kubernetes: $K8S_DIR${NC}"
 
-# Шаг 1: Проверяю Docker
-echo -e "\n${YELLOW}[1/13] Проверяю работу Docker...${NC}"
+# Шаг 1: Проверка Docker
+echo -e "\n${YELLOW}[1/13] Проверка работы Docker...${NC}"
 docker ps > /dev/null 2>&1
 if [ $? -ne 0 ]; then
     echo -e "${RED}❌ Docker не запущен или нет прав.${NC}"
@@ -111,8 +111,8 @@ if [ $? -ne 0 ]; then
 fi
 echo -e "${GREEN}✓ Docker работает${NC}"
 
-# Шаг 2: Запускаю Minikube
-echo -e "\n${YELLOW}[2/13] Запускаю Minikube...${NC}"
+# Шаг 2: Запуск Minikube
+echo -e "\n${YELLOW}[2/13] Запуск Minikube...${NC}"
 if minikube status | grep -q "Running"; then
     echo -e "${GREEN}✓ Minikube уже запущен${NC}"
 else
@@ -120,21 +120,21 @@ else
     check_success "Minikube запущен"
 fi
 
-# Шаг 3: Включаю Ingress
-echo -e "\n${YELLOW}[3/13] Включаю Ingress-контроллер...${NC}"
+# Шаг 3: Включение Ingress
+echo -e "\n${YELLOW}[3/13] Включение Ingress-контроллера...${NC}"
 minikube addons enable ingress
 check_success "Ingress включен"
 
-# Шаг 4: Проверяю наличие манифестов
-echo -e "\n${YELLOW}[4/13] Проверяю манифесты Kubernetes...${NC}"
+# Шаг 4: Проверка наличия манифестов
+echo -e "\n${YELLOW}[4/13] Проверка манифестов Kubernetes...${NC}"
 if [ ! -d "$K8S_DIR" ]; then
     echo -e "${RED}❌ Папка с манифестами не найдена: $K8S_DIR${NC}"
     exit 1
 fi
 echo -e "${GREEN}✓ Манифесты найдены${NC}"
 
-# Шаг 5: Разворачиваю основные компоненты
-echo -e "\n${YELLOW}[5/13] Разворачиваю приложение в кластере...${NC}"
+# Шаг 5: Разворачивание основных компонентов
+echo -e "\n${YELLOW}[5/13] Разворачивание приложения в кластере...${NC}"
 cd "$K8S_DIR"
 
 kubectl apply -f mongo-pv.yaml
@@ -147,8 +147,8 @@ kubectl apply -f hpa.yaml
 kubectl apply -f monitoring/
 check_success "Основные компоненты развернуты"
 
-# Шаг 6: Разворачиваю Loki
-echo -e "\n${YELLOW}[6/13] Разворачиваю Loki...${NC}"
+# Шаг 6: Разворачивание Loki
+echo -e "\n${YELLOW}[6/13] Разворачивание Loki...${NC}"
 cd "$K8S_DIR/monitoring/loki"
 kubectl apply -f loki-config.yaml
 kubectl apply -f loki-deployment.yaml
@@ -156,31 +156,31 @@ kubectl apply -f loki-service.yaml
 check_success "Loki развернут"
 cd "$SCRIPT_DIR"
 
-# Шаг 7: Ожидаю запуск MongoDB
-echo -e "\n${YELLOW}[7/13] Ожидаю запуск MongoDB...${NC}"
+# Шаг 7: Ожидание запуска MongoDB
+echo -e "\n${YELLOW}[7/13] Ожидание запуска MongoDB...${NC}"
 wait_for_pods "app=mongo" 180
 
-# Шаг 8: Ожидаю запуск приложения
-echo -e "\n${YELLOW}[8/13] Ожидаю запуск Flask-приложения...${NC}"
+# Шаг 8: Ожидание запуска приложения
+echo -e "\n${YELLOW}[8/13] Ожидание запуска Flask-приложения...${NC}"
 wait_for_pods "app=todo" 180
 
-# Шаг 9: Ожидаю запуск Prometheus и Grafana
-echo -e "\n${YELLOW}[9/13] Ожидаю запуск Prometheus и Grafana...${NC}"
+# Шаг 9: Ожидание запуска Prometheus и Grafana
+echo -e "\n${YELLOW}[9/13] Ожидание запуска Prometheus и Grafana...${NC}"
 wait_for_pods "app=prometheus" 120
 wait_for_pods "app=grafana" 120
 
-# Шаг 10: Ожидаю запуск Loki
-echo -e "\n${YELLOW}[10/13] Ожидаю запуск Loki...${NC}"
+# Шаг 10: Ожидание запуска Loki
+echo -e "\n${YELLOW}[10/13] Ожидание запуска Loki...${NC}"
 wait_for_pods "app=loki" 120
 
-# Шаг 11: Перезапускаю Promtail для подключения к Loki
-echo -e "\n${YELLOW}[11/13] Перезапускаю Promtail...${NC}"
+# Шаг 11: Перезапуск Promtail для подключения к Loki
+echo -e "\n${YELLOW}[11/13] Перезапуск Promtail...${NC}"
 kubectl rollout restart daemonset promtail
 sleep 5
 echo -e "${GREEN}✓ Promtail перезапущен${NC}"
 
-# Шаг 12: Настраиваю туннель для доступа к приложению
-echo -e "\n${YELLOW}[12/13] Настраиваю сетевой туннель...${NC}"
+# Шаг 12: Настройка туннеля для доступа к приложению
+echo -e "\n${YELLOW}[12/13] Настройка сетевого туннеля...${NC}"
 pkill -f "minikube tunnel" 2>/dev/null
 sleep 2
 
@@ -194,8 +194,8 @@ if [ $? -ne 0 ]; then
     echo -e "${YELLOW}⚠️ Туннель ещё настраивается, приложение может быть доступно по IP: $(minikube ip)${NC}"
 fi
 
-# Шаг 13: Настраиваю файл hosts и проверяю доступ
-echo -e "\n${YELLOW}[13/13] Настраиваю файл hosts и проверяю доступ...${NC}"
+# Шаг 13: Настройка файла hosts и проверка доступа
+echo -e "\n${YELLOW}[13/13] Настройка файла hosts и проверка доступа...${NC}"
 MINIKUBE_IP=$(minikube ip)
 sudo sed -i '/todo.local/d' /etc/hosts
 echo "$MINIKUBE_IP todo.local" | sudo tee -a /etc/hosts > /dev/null
@@ -220,3 +220,16 @@ echo -e "${YELLOW}📌 Управление проектом:${NC}"
 echo -e "   • Логи туннеля: ${GREEN}tail -f /tmp/minikube-tunnel.log${NC}"
 echo -e "   • Остановить туннель: ${GREEN}pkill -f 'minikube tunnel'${NC}"
 echo -e "   • Остановить кластер: ${GREEN}minikube stop${NC}"
+
+# КАК ЭТО РАБОТАЕТ:
+# -----------------
+# 1. Скрипт определяет директорию проекта и проверяет наличие манифестов.
+# 2. Проверяется работа Docker, при необходимости выдаются инструкции.
+# 3. Minikube запускается или проверяется его статус.
+# 4. Включается Ingress-контроллер.
+# 5. Последовательно применяются все Kubernetes манифесты.
+# 6. Ожидается запуск всех подов (MongoDB, приложение, Prometheus, Grafana, Loki).
+# 7. Перезапускается Promtail для подключения к Loki.
+# 8. Запускается minikube tunnel в фоне для доступа к приложению.
+# 9. Настраивается /etc/hosts с IP Minikube.
+# 10. Проверяется доступность приложения.

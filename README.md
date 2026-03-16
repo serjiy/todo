@@ -217,9 +217,3 @@ chmod +x ~/todo/start.sh
 * Настроено через GitHub Actions и переменные окружения:
   * `TELEGRAM_TOKEN` — токен бота
   * `TELEGRAM_CHAT_ID` — ID чата для уведомлений
-
-### Скриншоты приложения
-
-
-
-

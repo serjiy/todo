@@ -33,7 +33,7 @@ spec:
     spec:
       containers:
       - name: todo
-        image: serjiy/todo:20260403-191031-c5f34d4
+        image: serjiy/todo:20260403-191137-27d3109
         imagePullPolicy: Always
         # Политика загрузки образа — Always, чтобы при перезапуске всегда была актуальная версия.
         ports:

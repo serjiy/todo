@@ -221,8 +221,8 @@ Write-Host "=========================================================" -Foregrou
 Write-Host ""
 Write-Host "📊 Доступ к сервисам:" -ForegroundColor Cyan
 Write-Host "  • Приложение: http://todo.local/list" -ForegroundColor White
-Write-Host "  • Grafana:    http://localhost:3000 (admin/admin)" -ForegroundColor White
-Write-Host "  • Prometheus: http://localhost:9090" -ForegroundColor White
+Write-Host "  • Grafana:    minikube service grafana" -ForegroundColor White
+Write-Host "  • Prometheus: minikube service Prometheus" -ForegroundColor White
 Write-Host ""
 Write-Host "📌 Команды для открытия:" -ForegroundColor Cyan
 Write-Host "  • minikube service grafana" -ForegroundColor Gray

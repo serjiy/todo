@@ -47,9 +47,6 @@ COPY --chown=appuser:appuser static ./static
 USER appuser
 # Дальнейшие команды выполняются от имени пользователя appuser.
 
-EXPOSE 5000
-# Объявляется, что приложение использует порт 5000.
-
 CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "4", "--worker-class", "gevent", "app:app"]
 # Запускается gunicorn с 4 воркерами и асинхронными gevent-воркерами. Приложение берётся из app:app.
 
